@@ -10,11 +10,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies with mirror change and retry logic
+# Install system dependencies
 USER root
-RUN sed -i 's/deb.debian.org/ftp.us.debian.org/g' /etc/apt/sources.list && \
-    apt-get update -y || (sleep 5 && apt-get update -y) && \
-    apt-get install -y --no-install-recommends \
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     tesseract-ocr \
     libtesseract-dev \
     libgl1 \
