@@ -1,23 +1,23 @@
 # Use an official Python runtime as a parent image
-# Switching to full image (not slim) to see if it resolves apt-get issues on Render
-FROM python:3.11
+FROM python:3.11-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONPATH /app
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies with aggressive cleanup
+# Install system dependencies with mirror change and retry logic
 USER root
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* && \
-    apt-get update -y --fix-missing && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+RUN sed -i 's/deb.debian.org/ftp.us.debian.org/g' /etc/apt/sources.list && \
+    apt-get update -y || (sleep 5 && apt-get update -y) && \
+    apt-get install -y --no-install-recommends \
     tesseract-ocr \
     libtesseract-dev \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
