@@ -76,8 +76,8 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-@app.route('/')
-def home():
+@app.route('/api/health')
+def health_check():
     """Health check endpoint"""
     return jsonify({
         'status': 'online',

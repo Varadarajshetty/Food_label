@@ -1,6 +1,8 @@
 // NutriScan AI - Frontend Controller
 
-const API_URL = 'http://127.0.0.1:5000';
+const API_URL = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' 
+    ? 'http://127.0.0.1:5000' 
+    : ''; // Relative path for production/Render
 
 // --- DOM Elements ---
 const tabs = document.querySelectorAll('.tab-btn');
@@ -485,7 +487,7 @@ function showToast(msg, type = 'error') {
 
 async function checkBackendHealth() {
     try {
-        const res = await fetch(`${API_URL}/`, { method: 'GET', mode: 'cors' });
+        const res = await fetch(`${API_URL}/api/health`, { method: 'GET', mode: 'cors' });
         return res.ok;
     } catch (e) {
         return false;
