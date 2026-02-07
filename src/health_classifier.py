@@ -59,6 +59,15 @@ class HealthClassifier:
             model_path = Path(__file__).parent.parent / 'models' / 'health_classifier.joblib'
             if model_path.exists():
                 self.model_data = joblib.load(model_path)
+                # Compatibility fix for newer scikit-learn versions with older models
+                if 'model' in self.model_data:
+                    model = self.model_data['model']
+                    if hasattr(model, 'estimators_'):
+                        for est in model.estimators_:
+                            if not hasattr(est, 'monotonic_cst'):
+                                est.monotonic_cst = None
+                    elif not hasattr(model, 'monotonic_cst'):
+                        model.monotonic_cst = None
                 print("[INFO] Loaded ML Model")
             else:
                 print("[WARN] ML Model not found, using rules")
