@@ -1,5 +1,6 @@
 # Use an official Python runtime as a parent image
-FROM python:3.11-slim
+# Switching to full image (not slim) to see if it resolves apt-get issues on Render
+FROM python:3.11
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -9,8 +10,10 @@ ENV PYTHONPATH /app
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update -y && \
+# Install system dependencies with aggressive cleanup
+USER root
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    apt-get update -y --fix-missing && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     tesseract-ocr \
     libtesseract-dev \
