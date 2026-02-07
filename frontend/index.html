@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Food Label Decoder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- LEFT PANEL: Inputs & Navigation -->
+        <aside class="input-panel">
+            <header class="app-header">
+                <div class="logo">
+                    <span class="logo-icon">🍎</span>
+                    <h1>NutriScan AI</h1>
+                </div>
+                <p class="tagline">Instant Nutrition Analysis</p>
+            </header>
+
+            <div class="input-cards-container">
+                <!-- Tab Switching -->
+                <div class="input-tabs">
+                    <button class="tab-btn active" data-tab="upload" id="tabUpload">
+                        <span class="icon">📸</span> Scan
+                    </button>
+                    <button class="tab-btn" data-tab="manual" id="tabManual">
+                        <span class="icon">✏️</span> Manual
+                    </button>
+                </div>
+
+                <!-- Tab Content: Upload -->
+                <div class="tab-content active" id="contentUpload">
+                    <div class="upload-wrapper">
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-placeholder">
+                                <span class="upload-icon-large">☁️</span>
+                                <h3>Upload Label Photo</h3>
+                                <p>Drag & drop or click to browse</p>
+                            </div>
+                            <input type="file" id="imageInput" accept="image/*" capture="environment" hidden>
+                        </div>
+
+                        <div class="upload-preview" id="uploadPreview" style="display: none;">
+                            <img id="previewImage" src="" alt="Preview">
+                            <button class="btn-icon-close" id="removeImageBtn" title="Remove Image">✕</button>
+                        </div>
+
+                        <button class="btn btn-primary btn-lg btn-block" id="uploadBtn" disabled>
+                            Analyze Photo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Manual -->
+                <div class="tab-content" id="contentManual">
+                    <form id="nutritionForm" class="manual-form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Calories</label>
+                                <input type="number" id="calories" name="calories" step="0.1" min="0" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Protein (g)</label>
+                                <input type="number" id="protein" name="protein" step="0.1" min="0" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Carbs (g)</label>
+                                <input type="number" id="carbs" name="carbs" step="0.1" min="0" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Fat (g)</label>
+                                <input type="number" id="fat" name="fat" step="0.1" min="0" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Sugar (g)</label>
+                                <input type="number" id="sugar" name="sugar" step="0.1" min="0" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Fiber (g)</label>
+                                <input type="number" id="fiber" name="fiber" step="0.1" min="0" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Sodium (mg)</label>
+                                <input type="number" id="sodium" name="sodium" step="1" min="0" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Sat. Fat (g)</label>
+                                <input type="number" id="saturated_fat" name="saturated_fat" step="0.1" min="0"
+                                    placeholder="0">
+                            </div>
+                        </div>
+                        <div class="form-actions-sticky">
+                            <button type="submit" class="btn btn-primary btn-lg btn-block" id="analyzeBtn">
+                                Analyze Values
+                            </button>
+                            <button type="button" class="btn btn-text" id="resetBtn">Clear All</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </aside>
+
+        <!-- RIGHT PANEL: Results -->
+        <main class="results-panel">
+
+            <!-- Default State / Loading -->
+            <div class="empty-state" id="emptyState">
+                <div class="empty-content">
+                    <span class="empty-icon">🥗</span>
+                    <h2>Ready to Analyze</h2>
+                    <p>Upload a nutrition label or enter values manually to get detailed health insights.</p>
+                </div>
+            </div>
+
+            <div class="loading-state" id="loadingIndicator" style="display: none;">
+                <div class="spinner"></div>
+                <p>Analyzing nutritional data...</p>
+            </div>
+
+            <div class="error-toast" id="errorMessage" style="display: none;">
+                <span class="error-icon">⚠️</span>
+                <span id="errorText">Error message here</span>
+            </div>
+
+            <!-- Analysis Results -->
+            <div class="results-content" id="resultsSection" style="display: none;">
+
+                <!-- Product Header -->
+                <header class="results-header" id="productCard">
+                    <span class="badge-product">Product Identified</span>
+                    <h2 id="productNameText">Unknown Product</h2>
+                </header>
+
+                <div class="results-dashboard">
+                    <!-- Score & Classification -->
+                    <div class="dashboard-row primary">
+                        <div class="card score-card">
+                            <h3>Nutrition Score</h3>
+                            <div class="score-dial">
+                                <svg viewBox="0 0 36 36" class="circular-chart">
+                                    <path class="circle-bg"
+                                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                    <path class="circle" id="scoreCirclePath" stroke-dasharray="0, 100"
+                                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                </svg>
+                                <div class="score-text">
+                                    <span id="scoreValue">--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card classification-card">
+                            <h3>Verdict</h3>
+                            <div class="verdict-badge" id="classificationBadge">
+                                <span id="classificationText">--</span>
+                            </div>
+                            <p id="classificationSummary">Analysis pending...</p>
+                        </div>
+                    </div>
+
+                    <!-- Warnings -->
+                    <div class="dashboard-row" id="warningsCard" style="display: none;">
+                        <div class="card warning-card-full">
+                            <h3>⚠️ Health Warnings</h3>
+                            <div class="tags-container" id="warningsList"></div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Insights -->
+                    <div class="dashboard-grid">
+                        <div class="card">
+                            <h3>Key Highlights</h3>
+                            <ul class="check-list" id="pointsList"></ul>
+                        </div>
+                        <div class="card">
+                            <h3>Recommendations</h3>
+                            <ul class="star-list" id="recommendationsList"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js?v=4"></script>
+</body>
+
+</html>

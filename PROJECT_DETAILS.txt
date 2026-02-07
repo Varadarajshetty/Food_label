@@ -1,0 +1,137 @@
+================================================================================
+AI FOOD LABEL DECODER - PROJECT DETAILED REPORT
+================================================================================
+
+1. PROJECT SUMMARY
+------------------
+This project is an AI-powered web application that helps users analyze food products 
+for healthiness. Users can upload images of food packaging (either the front 
+product name or the back nutrition label), and the system automatically extracts 
+data, classifies the health level, and warns about specific disease risks.
+
+2. TECHNICAL ARCHITECTURE
+--------------------------
+The system follows a standard Client-Server architecture:
+
+[ Frontend (HTML/JS) ]  <--->  [ Backend API (Flask) ]  <--->  [ AI Models & Logic ]
+
+A. FRONTEND (c:\Users\ASUS\Desktop\Food_Label\frontend)
+   - Built with Vanilla HTML5, CSS3, and JavaScript.
+   - Provides an interface for:
+     - Manual nutrition data entry.
+     - Image upload (Drag & Drop).
+     - Visualizing results (Health Score, Classification, Charts).
+   - Communicates with the backend via RESTful API calls.
+
+B. BACKEND (c:\Users\ASUS\Desktop\Food_Label\backend)
+   - Powered by Python Flask.
+   - Key Endpoints:
+     - POST /api/predict: Analyzes manually entered nutrition data.
+     - POST /api/upload-image: Handles image processing pipelines.
+     - POST /api/batch-predict: Processes multiple items at once.
+   - Handles file uploads securely and orchestrates the AI components.
+
+3. CORE INTELLIGENCE MODULES (c:\Users\ASUS\Desktop\Food_Label\src)
+-------------------------------------------------------------------
+
+I. INTELLIGENT OCR (Optical Character Recognition)
+   The project uses a dual-engine approach for reading text:
+   1. OpenAI GPT-4o-mini (Primary): 
+      - Used for high-level understanding.
+      - Can distinguish between "Nutrition Label" and "Product Front".
+      - Extracts structured JSON data directly from images.
+   2. Tesseract OCR (Fallback):
+      - Traditional OCR used if OpenAI fails or for local verification.
+   - Workflow: Detect Image Type -> Extract Text/Data -> Standardize Keys.
+
+II. HEALTH CLASSIFICATION ENGINE (HealthClassifier)
+   Determines if a food is "Healthy", "Limit", or "Avoid".
+   - Hybrid Logic:
+     1. Machine Learning Model: Random Forest Classifier (stored in /models).
+        - It attempts to predict the category based on learned patterns from a dataset.
+     2. Rule-Based Fallback: If ML fails or is uncertain, it uses strict nutritional rules:
+        - Sodium: Limit > 140mg, Avoid > 300mg
+        - Sugar: Limit > 5g, Avoid > 15g
+        - Saturated Fat: Limit > 1.5g, Avoid > 4g
+        - Fiber/Protein: Bonus points for high values.
+
+III. NUTRITION SCORING (NutritionScorer)
+   Calculates a precise 0-100 health score.
+   - Starts at 50 (neutral).
+   - Adds points for Protein, Fiber, Vitamins.
+   - Subtracts points for Sodium, Sugar, Saturated Fat.
+   - Result is clamped between 0 and 100.
+
+IV. DISEASE WARNING SYSTEM (DiseaseWarningSystem)
+   Personalizes results by checking for contraindications with specific diseases:
+   - Diabetes: Monitors Sugar (>15g) and Carbs (>45g).
+   - Hypertension: Monitors Sodium (>400mg) and recommends Potassium.
+   - Heart Disease: Monitors Saturated Fat (>5g) and Cholesterol.
+   - Kidney Disease: Strict Sodium and Protein monitoring.
+   - Obesity: Checks high Calorie and Fat density.
+
+V. EXPLANATION GENERATOR
+   Translates raw data into human-readable advice.
+   - Example: instead of just "Sodium: 500mg", it says "⚠️ High in Sodium - Try flavoring with herbs instead of salt."
+
+4. DATA FLOW EXAMPLE
+--------------------
+1. User uploads a photo of "Lay's Chips".
+2. Backend receives image -> Sends to OpenAI OCR.
+3. OpenAI detects "Product Front" -> Identifies text "Lay's Classic".
+4. System searches internal database/API for "Lay's Classic" nutrition info.
+5. Found Data: {Calories: 160, Sodium: 170mg, Fat: 10g...}
+6. HealthClassifier evaluates -> "Limit" (due to fat/sodium).
+7. DiseaseWarningSystem checks -> Warning for Hypertension (Sodium).
+8. Backend returns JSON response -> Frontend displays "Yellow" status with warnings.
+
+5. KEY FILES
+------------
+- setup.bat & run_app.bat: Scripts to set up environment and launch the server.
+- backend/app.py: Main entry point for the Web API.
+- src/health_classifier.py: Core logic for health grading.
+- src/openai_ocr.py: Integration with GPT-4o-mini for vision tasks.
+- Dataset/: Contains CSV data for training the ML models.
+- src/train_model.py: Script to train the Random Forest model.
+
+6. DATASETS & DATA PIPELINE
+---------------------------
+The data pipeline transforms raw CSVs into training data for the ML model.
+
+A. SOURCE DATA (Dataset/)
+   - FOOD-DATA-GROUP1.csv to GROUP5.csv: Raw datasets containing thousands of food items with nutritional info.
+   - daily_food_nutrition_dataset.csv: Supplementary dataset.
+   - The data includes fields like 'Caloric Value', 'Protein', 'Carbohydrates', 'Fat', 'Sodium', etc.
+
+B. PROCESSING STEPS
+   1. Data Preparation:
+      - Consolidates all group files into `processed_food_data.csv`.
+      - Cleans missing values and standardizes column names.
+   2. Feature Engineering (src/feature_engineering.py):
+      - Creates `engineered_food_data.csv`.
+      - Adds derived features to improve model performance:
+        - Macronutrient Ratios: % Protein, % Carbs, % Fat.
+        - Nutrient Density: Protein per 100 calories, Fiber per 100 calories.
+        - Risk Flags: Binary indicators for High Sugar (>15g), High Sodium (>400mg), etc.
+
+7. MACHINE LEARNING WORKFLOW
+----------------------------
+The project uses a supervised learning approach to classify foods.
+
+A. MODEL ARCHITECTURE
+   - Algorithm: Random Forest Classifier (from scikit-learn).
+   - Why Random Forest? It handles non-linear relationships well (e.g., a food can be high calorie but still healthy if high protein) and provides feature importance.
+
+B. HYBRID "BOOTSTRAPPING" STRATEGY
+   Since the raw dataset doesn't strictly come with "Healthy/Limit/Avoid" labels:
+   1. The system first uses the Expert Rule-Based Logic (from HealthClassifier) to "label" the dataset.
+      - It runs every row through the strict rules (Sodium < 140mg, etc.) to generate a 'health_label'.
+   2. This labeled feature-rich dataset is then used to train the Random Forest.
+   3. Benefit: The ML model learns the *general* patterns and edge cases from the rules, allowing it to make faster predictions and potentially generalize better to unseen data than complex nested if-statements.
+
+C. TRAINING PROCESS (src/train_model.py)
+   1. Loads `engineered_food_data.csv`.
+   2. Splits data: 80% Training, 20% Testing.
+   3. Trains the Random Forest on 8 features + derived engineered features.
+   4. Exports the trained model to `models/health_classifier.joblib`.
+   5. During inference, if the ML model is available, it is used; otherwise, the system falls back to rules.

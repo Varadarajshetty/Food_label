@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: food-label-decoder
+    env: docker
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
